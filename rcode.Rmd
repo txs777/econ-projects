@@ -1,0 +1,88 @@
+---
+title: 'ECON 488: US 2020 Presidential Election'
+author: "Taylor Stacy"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    number_section: no
+    toc: no
+    toc_depth: 3
+    toc_float: yes
+    code_folding: show
+    css: lab_templet.css
+---
+```{r setup, include=FALSE}
+rm(list=ls())
+library(tidyverse)
+library(mosaic)
+library(corrplot)
+library(ggplot2)
+library(reshape2)
+library(jtools)
+library(stargazer)
+library(gridExtra)
+library(lmtest)
+library(ggfortify)
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE)
+```
+
+# Data
+```{r}
+dat <- read.csv("C:/Users/Taylor/Desktop/Capstone/final_dat.csv")
+dat$per_capita_income <- log(dat$per_capita_income)
+dat$tot_cases <- log(dat$tot_cases)
+dat$dem_percent <- (dat$dem_percent * 100)
+
+final_dat <- dat[-c(1, 2, 3, 5, 6, 9, 13)]
+    # removes state names, raw vote counts, total vote counts, cpi_annual, gdp
+```
+
+## Data Summary
+```{r}
+summary(final_dat)
+
+melt_df <- melt(final_dat)
+ggplot(melt_df, aes(x=variable, y=value))+
+  geom_boxplot()+
+  facet_wrap(~variable, scale = "free")
+```
+
+# Correlation
+```{r}
+corr <- round(cor(final_dat), 2)
+corrplot(corr, diag = F,
+         method = 'circle',
+         type = 'upper',
+         addCoef.col = 'black',
+         number.cex = .6)
+```
+
+# Model 1: All predictors
+```{r}
+model1 <- lm(dem_percent ~ .,
+             data = final_dat)
+summary(model1)
+```
+
+## Plot of Predicted Values and Residuals
+```{r}
+par(mfrow = c(2,2))
+autoplot(model1)
+```
+
+# Analysis
+```{r}
+stargazer(model1,
+          type = "text",
+          title = "Model Analysis")
+```
+
+
+## 	Breusch-Pagan test
+```{r}
+bptest(model1, studentize = F)
+```
+
+For both model1 and model2, the p-value is greater than 0.05, then we fail to reject the null hypothesis and conclude that homoscedasticity is present in the regression models. 
